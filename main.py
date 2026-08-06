@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import uvicorn
 from fastapi import FastAPI, Depends
 from models import Product
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,7 +8,17 @@ import database_models
 from sqlalchemy.orm import Session
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        database_models.Base.metadata.create_all(bind=engine)
+        init_db()
+    except Exception as e:
+        print(f"Warning: Could not connect to default database on startup: {e}")
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -15,13 +27,7 @@ app.add_middleware(
     allow_methods=["*"]
 )
 
-@app.on_event("startup")
-def on_startup():
-    try:
-        database_models.Base.metadata.create_all(bind=engine)
-        init_db()
-    except Exception as e:
-        print(f"Warning: Could not connect to default database on startup: {e}")
+
 
 @app.get("/")
 def greet():
@@ -103,3 +109,7 @@ def delete_product(id: int, db: Session = Depends(get_db)):
         return "Product deleted"
     else:
         return "Product not found"
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
