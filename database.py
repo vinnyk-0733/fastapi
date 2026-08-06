@@ -1,7 +1,11 @@
 import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
-db_url = os.getenv["DATABASE_URL"]
+load_dotenv()
+
+db_url = os.getenv("DATABASE_URL", "sqlite:///./sql_app.db")
 engine = create_engine(db_url)
 session = sessionmaker(autoflush=False, autocommit = False, bind=engine)
+
