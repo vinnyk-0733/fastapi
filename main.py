@@ -6,8 +6,6 @@ import database_models
 from sqlalchemy.orm import Session
 
 
-database_models.Base.metadata.create_all(bind = engine)
-
 app = FastAPI()
 
 app.add_middleware(
@@ -16,6 +14,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"]
 )
+
+@app.on_event("startup")
+def on_startup():
+    try:
+        database_models.Base.metadata.create_all(bind=engine)
+        init_db()
+    except Exception as e:
+        print(f"Warning: Could not connect to default database on startup: {e}")
 
 @app.get("/")
 def greet():
@@ -40,16 +46,17 @@ def get_db():
 
 def init_db():
     db = session()
-    
-    count = db.query(database_models.Product).count()
-    
-    if count == 0:
-        for product in products:
-            db.add(database_models.Product(**product.model_dump()))
+    try:
+        count = db.query(database_models.Product).count()
+        
+        if count == 0:
+            for product in products:
+                db.add(database_models.Product(**product.model_dump()))
 
-        db.commit()
-    
-init_db()
+            db.commit()
+    finally:
+        db.close()
+
     
 
 @app.get("/products")
