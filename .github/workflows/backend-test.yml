@@ -14,10 +14,10 @@ jobs:
 
         steps:
             - name: checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
             
             - name: set up python
-              uses: actions/setup-python@v3
+              uses: actions/setup-python@v5
               with:
                 python-version: ${{ env.PYTHON-VERSION}}
                 cache: 'pip'
